@@ -1,28 +1,55 @@
 # hashicorp-secure-properties-provider
 This module allows to read properties from the hashicorp vault as opposed to properties file
 
-## Secure properties with Mule Vault
+ 
 
-This asset shows with a basic application how encrypted properties can be used within it.
+# The HashiCorp hashicorp-secure-properties
 
-1. Read the documentation [page][1] for general understanding and in particular follow the instructions [here][2] on how to add secure configuration to your application, after this asset is downloaded into studio.
-2. Read [here][3] on how to safely hide properties on CloudHub
-3. Add the vault key and any environment specific variables in Studio, Run Configuration -> Argument and in there one can specify the typical ones are mule\_env= and secret\_key= (those are used in this example too)
-4. One should be able to run the application and execute an HTTP request as below
-5. To encrypt/decrypt the credentials in the dev.properties file Help -> Install New Software -> Work with -> [http://security-update-site-1.4.s3.amazonaws.com](http://security-update-site-1.4.s3.amazonaws.com) and press add. Select all the packages and install them.
-6. After restarting Studio, right click on the dev.properties file and Open with Mule Properties Editor
+The HashiCorp Secure Properties connector allows you to retrieve properties from an HashiCorp Vault instance in a similar way as the mule-secure-configuration-property module
 
-Example URL: GET [http://localhost:8081/test](http://localhost:8081/test)
+A secure properties file is configured with a `<hashi-corp-vault-properties:config>` tag, for example:
 
-See screenshots below:
+```
+    <hashi-corp-vault-properties:config name="HashiCorp_Vault_Properties_Config" 
+	doc:name="HashiCorp Vault Properties Config" 
+	doc:id="93aee799-006c-48ad-8844-3fbcf438b93c" 
+	vaultToken="${vaultToken.runtime.property}"
+	vaultURL="https://localhost:8200" 
+	vaultStoragePath="secret/gs-vault-config" truststorePassword="${truststorePassword.runtime.property}" truststorePath="vault_truststore.jks">
+	</hashi-corp-vault-properties:config>
 
-![fe738b82-7936-4528-add9-77520af63dd1-vault1.png](https://exchange2-file-upload-service-kprod.s3.us-east-1.amazonaws.com:443/fe738b82-7936-4528-add9-77520af63dd1-vault1.png)
+    <global-property name="prop" value="${vault::property.key1}" />
+```
 
-![9082568a-4376-4079-9061-ff5e9d28b0b3-vault2.png](https://exchange2-file-upload-service-kprod.s3.us-east-1.amazonaws.com:443/9082568a-4376-4079-9061-ff5e9d28b0b3-vault2.png)
+In this example, two values are passed into the Mule runtime at deployment time as a system environment variables `vaultToken.runtime.property` and `truststorePassword.runtime.property`. These properties must be the exact ones used to configure the vault and the truststore (if any for truststore as both the truststorePath and truststorePassword are optional, JVM's is used by default).
 
-![c952f80a-d008-4bf7-8c20-649d177bcd65-vault3.png](https://exchange2-file-upload-service-kprod.s3.us-east-1.amazonaws.com:443/c952f80a-d008-4bf7-8c20-649d177bcd65-vault3.png)
+**Note**: When using encrypted properties, it is especially important to secure access to the operating system. Anyone who can run a `ps` command or view a Java console will be able to see the decrypted values that are stored in the Mule application's memory.
 
-  [1]: https://docs.mulesoft.com/mule-runtime/4.1/secure-configuration-properties
-  [2]: https://docs.mulesoft.com/mule-runtime/4.1/secure-configuration-properties#adding-secure-configuration-properties-to-your-app
-  [3]: https://docs.mulesoft.com/runtime-manager/secure-application-properties
-  [4]: https://docs.mulesoft.com/mule-runtime/3.6/installing-anypoint-enterprise-security
+As this is built as a Mule module, the way to use it within an application is the same as for any other Mule module. Simply search for the HashiCorp module in Exchange from the Mule Palette within Anypoint Studio and import it from there.
+
+```
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:core="http://www.mulesoft.org/schema/mule/core" xmlns:tls="http://www.mulesoft.org/schema/mule/tls" xmlns:hashi-corp-vault-properties="http://www.mulesoft.org/schema/mule/hashi-corp-vault-properties"
+	xmlns:hashicorp-secure-properties="http://www.mulesoft.org/schema/mule/hashicorp-secure-properties"
+	xmlns:hashicorp-properties-loader="http://www.mulesoft.org/schema/mule/hashicorp-properties-loader" xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/hashi-corp-vault-properties http://www.mulesoft.org/schema/mule/hashi-corp-vault-properties/current/mule-hashi-corp-vault-properties.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="bc09acb1-3064-4df9-b1e6-b50bfdb9aa4a" >
+		<http:listener-connection host="0.0.0.0" port="8081" >
+		</http:listener-connection>
+	</http:listener-config>
+
+	<hashi-corp-vault-properties:config name="HashiCorp_Vault_Properties_Config" 
+	doc:name="HashiCorp Vault Properties Config" 
+	doc:id="93aee799-006c-48ad-8844-3fbcf438b93c" 
+	vaultToken="49VLojFvnnv5wnIY3GGW9i6x" 
+	vaultURL="https://localhost:8200" 
+	vaultStoragePath="secret/gs-vault-config" truststorePassword="changeit" truststorePath="vault_truststore.jks">
+	</hashi-corp-vault-properties:config>
+	<flow name="security-propertiesFlow" doc:id="970128be-94c9-443c-9f54-f64917d3b3c0" >
+		<http:listener doc:name="Listener" doc:id="cbda0d25-7f90-4187-a491-338e79f7f34b" config-ref="HTTP_Listener_config" path="/test"/>
+		<set-payload value="Test properties example.password = ${vault::example.password}" doc:name="Set Payload" doc:id="64b5fcfb-11b0-4a62-82c3-92f8379f95fc" />
+	</flow>
+</mule>
+```
