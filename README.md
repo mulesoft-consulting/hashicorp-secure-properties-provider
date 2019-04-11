@@ -1,8 +1,3 @@
-# hashicorp-secure-properties-provider
-This module allows to read properties from the hashicorp vault as opposed to properties file
-
- 
-
 # The HashiCorp hashicorp-secure-properties
 
 The HashiCorp Secure Properties connector allows you to retrieve properties from an HashiCorp Vault instance in a similar way as the mule-secure-configuration-property module
